@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "language": "pt-BR",
+    "mode": "live",
+    "generated_at": "2026-10-05",
+    "demo": true,
+    "pain": "remover pelo de cachorro",
+    "market": ["BR"],
+    "quantity": 3,
+    "rank_by": ["social", "search"],
+    "request": "Busque 3 produtos que resolvam a dor de remover pelo de cachorro, com redes sociais, canais de busca, fornecedor, país, efetividade e o link com maior engajamento."
+  },
+  "assumptions": [
+    "EXEMPLO FICTÍCIO: produtos, números, fornecedores e links não existem. Serve só para mostrar o formato do relatório.",
+    "Mercado padrão: Brasil. Faixa de preço: US$ 20–80."
+  ],
+  "limits": [
+    "No relatório real, o Google Trends dá interesse relativo, não volume absoluto de buscas."
+  ],
+  "verdict": "No exemplo, a luva lidera em tração, mas o rolo adesivo tem a melhor margem; a escova autolimpante é a opção mais cara para testar.",
+  "products": [
+    {
+      "name": "Luva removedora de pelos (DEMO)",
+      "pain": "Pelo de cachorro grudado em sofá, cama e roupas",
+      "solution_type": "Luva de borracha",
+      "segment": { "value": "Pet + limpeza doméstica", "label": "estimated", "note": "inferido das categorias dos marketplaces" },
+      "target_audience": { "value": "Tutores de cães de pelo curto e médio, 25–45 anos, moradores de apartamento", "label": "estimated", "note": "inferido dos comentários dos vídeos" },
+      "effectiveness": { "value": "Nota média 4,4/5 em 8,2 mil avaliações; reclamação recorrente: perde eficácia em pelo longo", "label": "verified", "source": "https://example.com/demo/marketplace/luva", "date": "2026-10-05" },
+      "engagement": { "value": "1,2 mi de views · 96 mil curtidas · 3,1 mil comentários (TikTok)", "label": "verified", "source": "TikTok (demo)", "date": "2026-10-05" },
+      "top_post": { "value": "https://example.com/demo/tiktok/luva", "label": "verified", "source": "TikTok (demo)", "date": "2026-10-05", "note": "post orgânico de maior engajamento encontrado" },
+      "social_networks": { "value": ["TikTok", "Instagram Reels", "YouTube Shorts"], "label": "verified", "source": "buscas por plataforma (demo)", "date": "2026-10-05" },
+      "search_channel": { "value": "TikTok (índice relativo mais alto entre os canais comparados)", "label": "estimated", "note": "Google Trends e busca nativa; índice relativo, não volume" },
+      "supplier": { "value": "Fornecedor A (demo) — preço unitário e prazo no link", "label": "verified", "source": "https://example.com/demo/fornecedor/a", "date": "2026-10-05" },
+      "traction_country": { "value": "Brasil", "label": "estimated", "note": "idioma dos comentários e filtro de país das buscas" },
+      "supplier_country": { "value": "China", "label": "verified", "source": "https://example.com/demo/fornecedor/a", "date": "2026-10-05" },
+      "first_seen": { "value": "2025-03 (primeiro anúncio visto na biblioteca de anúncios)", "label": "verified", "source": "Meta Ad Library (demo)", "date": "2026-10-05", "note": "não é a data de lançamento real" },
+      "comparison": { "value": "Maior tração e custo baixo; perde para o rolo em pelo longo.", "label": "estimated", "note": "comparação entre os 3 produtos desta rodada" },
+      "signals": { "engagement": 1200000, "search_index": 100, "social_platforms": 3, "rating": 4.4, "reviews": 8200 },
+      "economics": { "currency": "BRL", "price": 59.9, "cost": 8.0, "shipping": 6.0, "tax": 12.0, "fee_pct": 4.5, "fee_fixed": 1.0, "refund_pct": 5 },
+      "risks": ["Baixa barreira de entrada: muitos anunciantes com o mesmo produto."]
+    },
+    {
+      "name": "Rolo adesivo reutilizável (DEMO)",
+      "pain": "Pelo de cachorro grudado em sofá, cama e roupas",
+      "solution_type": "Rolo lavável",
+      "segment": { "value": "Pet + limpeza doméstica", "label": "estimated", "note": "inferido das categorias dos marketplaces" },
+      "target_audience": { "value": "Tutores de cães de pelo longo e donos de pets que viajam com o animal", "label": "estimated", "note": "inferido dos comentários" },
+      "effectiveness": { "value": "Nota média 4,6/5 em 3,5 mil avaliações; elogiado em pelo longo", "label": "verified", "source": "https://example.com/demo/marketplace/rolo", "date": "2026-10-05" },
+      "engagement": { "value": "640 mil views · 41 mil curtidas (Instagram Reels)", "label": "verified", "source": "Instagram (demo)", "date": "2026-10-05" },
+      "top_post": { "value": "https://example.com/demo/instagram/rolo", "label": "verified", "source": "Instagram (demo)", "date": "2026-10-05" },
+      "social_networks": { "value": ["Instagram Reels", "TikTok"], "label": "verified", "source": "buscas por plataforma (demo)", "date": "2026-10-05" },
+      "search_channel": { "value": "Google (maior índice relativo)", "label": "estimated", "note": "Google Trends; índice relativo, não volume" },
+      "supplier": { "value": "Fornecedor B (demo)", "label": "unverified", "note": "não foi possível confirmar prazo e avaliações" },
+      "traction_country": { "value": "Brasil", "label": "estimated", "note": "idioma dos comentários" },
+      "supplier_country": { "value": "China", "label": "unverified", "note": "o fornecedor não informa a origem na página" },
+      "first_seen": { "value": "2024-11 (anúncio mais antigo ainda ativo)", "label": "verified", "source": "Meta Ad Library (demo)", "date": "2026-10-05", "note": "anúncio ativo há quase um ano sugere que paga o tráfego" },
+      "comparison": { "value": "Melhor margem e boa efetividade em pelo longo; menor tração em vídeo.", "label": "estimated", "note": "comparação entre os 3 produtos desta rodada" },
+      "signals": { "engagement": 640000, "search_index": 82, "social_platforms": 2, "rating": 4.6, "reviews": 3500 },
+      "economics": { "currency": "BRL", "price": 69.9, "cost": 7.0, "shipping": 7.0, "tax": 13.0, "fee_pct": 4.5, "fee_fixed": 1.0, "refund_pct": 4 }
+    },
+    {
+      "name": "Escova autolimpante (DEMO)",
+      "pain": "Pelo de cachorro solto na casa durante a muda",
+      "solution_type": "Escova com botão de limpeza",
+      "segment": { "value": "Pet + cuidados com o animal", "label": "estimated", "note": "inferido das categorias dos marketplaces" },
+      "target_audience": { "value": "Tutores que escovam o cão em casa e querem reduzir pelo no ambiente", "label": "estimated", "note": "inferido dos comentários" },
+      "effectiveness": { "value": "Nota média 4,2/5 em 1,1 mil avaliações; reclamações de cerdas que dobram", "label": "verified", "source": "https://example.com/demo/marketplace/escova", "date": "2026-10-05" },
+      "engagement": { "value": "310 mil views · 18 mil curtidas (YouTube Shorts)", "label": "verified", "source": "YouTube (demo)", "date": "2026-10-05" },
+      "top_post": { "value": "https://example.com/demo/youtube/escova", "label": "verified", "source": "YouTube (demo)", "date": "2026-10-05" },
+      "social_networks": { "value": ["YouTube Shorts", "Instagram Reels"], "label": "verified", "source": "buscas por plataforma (demo)", "date": "2026-10-05" },
+      "search_channel": { "value": "YouTube (maior índice relativo)", "label": "estimated", "note": "Google Trends filtrado por busca no YouTube; índice relativo" },
+      "supplier": { "value": "Fornecedor C (demo)", "label": "verified", "source": "https://example.com/demo/fornecedor/c", "date": "2026-10-05" },
+      "traction_country": { "value": "Brasil e Portugal", "label": "estimated", "note": "idioma dos comentários" },
+      "supplier_country": { "value": "China", "label": "verified", "source": "https://example.com/demo/fornecedor/c", "date": "2026-10-05" },
+      "first_seen": { "value": "2025-08 (data de disponibilidade no marketplace)", "label": "verified", "source": "https://example.com/demo/marketplace/escova", "date": "2026-10-05", "note": "não é a data de lançamento real" },
+      "comparison": { "value": "Menor tração e ticket maior; resolve a muda, não o pelo já grudado nos móveis.", "label": "estimated", "note": "comparação entre os 3 produtos desta rodada" },
+      "signals": { "engagement": 310000, "search_index": 54, "social_platforms": 2, "rating": 4.2, "reviews": 1100 }
+    }
+  ],
+  "discarded": [
+    { "name": "Aspirador portátil com acessório pet (DEMO)", "reason": "Ticket alto e logística pesada; fora da faixa de preço pedida." }
+  ],
+  "next_steps": [
+    "Testar 3 criativos por produto com orçamento pequeno e comparar o custo por compra.",
+    "Pedir amostra do fornecedor do produto líder antes de escalar."
+  ]
+}

@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Python ${{ matrix.python }} · ${{ matrix.os }} · ${{ matrix.extras && 'com opcionais' || 'núcleo' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.9", "3.13"]
+        extras: [true, false]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Instalar dependências opcionais (docx, xlsx, pdf)
+        if: ${{ matrix.extras }}
+        run: python -m pip install -r requirements-optional.txt
+      - name: Testes
+        run: python -m unittest discover -s tests -v
+      - name: Diagnóstico
+        run: python scripts/teixugo.py doctor
+      - name: Exemplo valida e renderiza
+        run: |
+          python scripts/teixugo.py validate examples/report.example.pt-BR.json
+          python scripts/teixugo.py render examples/report.example.pt-BR.json --format md,txt,html --out out

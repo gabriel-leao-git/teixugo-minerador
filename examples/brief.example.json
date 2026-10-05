@@ -1,0 +1,15 @@
+{
+  "language": "pt-BR",
+  "pain": "remover pelo de cachorro",
+  "quantity": 3,
+  "market": ["BR"],
+  "pain_terms": {
+    "pt-BR": ["remover pelo de cachorro", "tirar pelo de cachorro do sofá"],
+    "en": ["remove dog hair", "dog hair remover for furniture"]
+  },
+  "rank_by": ["social", "search"],
+  "solution_variety": "different",
+  "price_range": { "min": 20, "max": 80, "currency": "USD" },
+  "include_economics": false,
+  "output_formats": ["pdf"]
+}

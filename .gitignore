@@ -1,0 +1,15 @@
+# relatórios gerados e pedidos locais
+teixugo-relatorios/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# editores e sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

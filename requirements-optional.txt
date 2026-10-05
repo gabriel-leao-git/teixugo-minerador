@@ -1,0 +1,4 @@
+# Opcionais: só necessários para gerar .docx, .xlsx e .pdf (md, txt e html não precisam de nada).
+python-docx>=1.1
+openpyxl>=3.1
+reportlab>=4.0
