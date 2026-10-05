@@ -8,6 +8,12 @@
 | `pain` | A dor que os produtos devem resolver. **Obrigatório em `pain`** | Sem padrão: pergunte |
 | `niche` | O nicho (ex.: "pet", "organização de casa"). **Obrigatório em `niche`**; no `sonar`, `pain` ou `niche` | Sem padrão |
 | `platforms` | Limita onde pesquisar: `tiktok`, `youtube`, `instagram`, `pinterest`, `reddit`, `google`, `google_trends`, `meta_ad_library`, `mercado_livre`, `amazon`, `shopee`, `aliexpress` | Todas |
+| `radius` | Quão longe da semente pesquisar: 0 (só o termo) a 3 (inclui mercados análogos) | 1 |
+| `period_days` | Só resultados dos últimos N dias | Sem filtro |
+| `exclude` | Termos a evitar nas buscas | Nenhum |
+| `intents` | Tipos de consulta: `discovery`, `proof`, `objection`, `commerce` | Todas |
+| `exact` | Termo entre aspas na busca web | `false` |
+| `related_terms`, `adjacent_terms`, `analog_markets` | Camadas do raio (você gera; veja `references/sondas-e-raio.md`) | Nenhuma |
 | `quantity` | Quantos produtos entregar (1 a 10) | 3 |
 | `market` | Países onde vender (códigos: `["BR"]`) | `["BR"]` |
 | `language` | Idioma do relatório (`pt-BR` ou `en`) | O idioma do pedido |

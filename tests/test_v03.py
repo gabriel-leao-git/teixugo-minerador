@@ -7,6 +7,7 @@ import os
 import tempfile
 import unittest
 import urllib.error
+from unittest import mock
 
 from _helpers import ROOT, example_brief, example_report
 from tx import blocks, history, model, queries, render, trends, watch, webfetch, youtube
@@ -130,6 +131,10 @@ class QueriesV03(unittest.TestCase):
 # --------------------------------------------------------------------------- histórico e sonar
 
 
+def public_dns(host, port, type=None, **kw):
+    return [(2, 1, 6, "", ("93.184.216.34", port))]
+
+
 def snap(day, products):
     return {"taken_at": day, "scope": "x", "market": ["BR"],
             "products": {k: {"name": k.upper(), "solution_type": "t", "signals": v} for k, v in products.items()}}
@@ -171,7 +176,7 @@ class Compare(unittest.TestCase):
         c = history.compare(self.prev, self.cur)
         a, b = c["items"]["a"], c["items"]["b"]
         self.assertEqual(c["days"], 7)
-        self.assertEqual(a["growth"], {"social": 200.0, "search": 100.0, "reviews": 50.0, "ads": 100.0})
+        self.assertEqual(a["growth"], {"social": 200.0, "search": 100.0, "reviews": 50.0, "ads": 100.0, "creators": None})
         self.assertEqual(a["acceleration"], 90.0)  # 40*1 + 30*1 + 20*0.5 + 10*1
         self.assertEqual(a["level"], "strong")
         self.assertEqual(b["acceleration"], 0.0)
@@ -406,6 +411,12 @@ PRODUCT_HTML = """<html><head><title> Luva  Pet </title>
 class WebFetch(unittest.TestCase):
     URL = "https://loja.test/p/1"
 
+    def setUp(self):
+        # sem DNS de verdade: todo nome resolve para um IP público fixo
+        patcher = mock.patch("tx.netguard.socket.getaddrinfo", side_effect=public_dns)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_extracts_title_description_and_jsonld_product(self):
         res = webfetch.fetch(self.URL, opener=make_opener({self.URL: PRODUCT_HTML}))
         self.assertIsNone(res["error"])
@@ -458,7 +469,7 @@ class WebFetch(unittest.TestCase):
     def test_cli_invalid_scheme_exit_1(self):
         code, out = run("fetch", "ftp://x.test/a")
         self.assertEqual(code, 1)
-        self.assertIn("http(s)", out)
+        self.assertIn("esquema", out)
 
 
 # --------------------------------------------------------------------------- YouTube

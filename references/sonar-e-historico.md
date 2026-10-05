@@ -26,6 +26,7 @@ Filtros opcionais: `market` (países) e `platforms` (limita as plataformas pesqu
 | `search_index` | busca | Do CSV do Trends (`trends-import`), mesmo gráfico e período |
 | `reviews` | avaliações | Número de avaliações do anúncio principal |
 | `advertisers` | anúncios | Anunciantes distintos com anúncio ativo, como a biblioteca de anúncios mostra |
+| `creators` | criadores | Criadores distintos publicando sobre o produto no período. **Indicador antecipado**: costuma subir antes das views |
 
 - Defina um **`id` estável** (kebab-case) para cada produto e **use o mesmo em todas as leituras**. Sem `id`, a chave é o nome, e mudar o nome faz o produto parecer "novo".
 - Sinal que você não conseguiu medir fica de fora (não invente). Um componente ausente em **qualquer** produto não entra no cálculo de aceleração; o relatório mostra o que ficou de fora.
@@ -51,6 +52,8 @@ Filtros opcionais: `market` (países) e `platforms` (limita as plataformas pesqu
 | Nível `moderado` | Ao menos 1 componente acima do limite. Informativo; só alerta se `--alert-on-moderate` |
 | Aceleração (0–100) | **Absoluta**: +100% por semana em um componente dá a nota máxima daquele componente. Não depende dos outros produtos |
 | Janela (0–100) | **Relativa** à leitura: muita atenção e poucos anunciantes. Precisa de `engagement` e `advertisers` |
+| Persistência | Quantas leituras seguidas o produto acelerou e há quantos dias. **Sustentada** = 14 dias ou mais (ajuste com `--sustain-days`). Um pico de uma leitura não é tendência |
+| Saturação | Faixa pelo nº de anunciantes: inicial (0–2), saudável (3–10), aquecida (11–49), saturada (50+). Ver heurísticas abaixo |
 | Novos / sumiram | Produtos que apareceram ou deixaram de aparecer em relação à leitura anterior (sumir não prova que morreu: pode ser falha de busca) |
 
 Salvaguardas: **bases pequenas são ignoradas** (de 10 para 40 views é +300% e não significa nada: o mínimo é 1.000 de engajamento, 5 de índice, 20 avaliações, 3 anunciantes) e leituras com menos de 2 dias de intervalo não são comparadas.
@@ -70,6 +73,20 @@ Salvaguardas: **bases pequenas são ignoradas** (de 10 para 40 views é +300% e 
 - **Conectores** (Gmail, Google Calendar): a rotina pode usá-los para enviar o resumo ou criar um lembrete. **Precisam estar autorizados** nas configurações de conectores do claude.ai. A skill não autoriza nada nem finge que enviou: se faltar, diz qual conector faltou. Se o conector de e-mail envia ou só cria rascunho depende do conector; confira antes de contar com o envio.
 - **Memória entre execuções:** uma rotina na nuvem começa do zero. A pasta `teixugo-watch/` precisa persistir (por exemplo, commitada no repositório da rotina). Sem isso, toda leitura vira "linha de base".
 - **Notificação** (`push`): só funciona onde o ambiente oferece.
+
+## Heurísticas de mercado (referência, não verdade)
+
+Os limiares abaixo aparecem com frequência em guias do setor de dropshipping. **Não foram validados** por esta skill, variam por nicho e país, e vêm de conteúdo de blogs e fornecedores de ferramentas (que têm interesse comercial). Use como ponto de partida e confira no seu nicho.
+
+| Heurística | Valor recorrente | Onde entra |
+|---|---|---|
+| Anúncio ativo por muito tempo sugere que paga o tráfego | mais de 14 dias é notável; 30 dias ou mais é forte | `ad_days` (ranking de tração) |
+| Poucos anunciantes = demanda validada com janela aberta; dezenas = janela fechando | 3 a 10 saudável; 50 ou mais saturado | Faixa de saturação do sonar |
+| Crescimento de hashtag sustentado | acima de 25% por semana durante 14 dias | `min_growth` e `sustain_days` do sonar |
+| Criadores antes das views | a adoção por criadores sobe antes do total de views, e criadores de 10 mil a 100 mil seguidores costumam ser os primeiros | Sinal `creators` |
+| "Breakout" do Google Trends | termo com crescimento acima de 5.000% | Observação qualitativa em `search_channel` (o Trends não dá o número bruto) |
+
+Fontes consultadas em 2026-10-05, como exemplo do tipo de guia (não como prova): [critérios com a biblioteca de anúncios (Dropified)](https://www.dropified.com/blog/how-to-find-a-winning-product/), [guia de ad spy (adlibrary)](https://adlibrary.com/guides/ad-spy-tools-dropshipping), [velocidade de tendência no TikTok Shop (Dropified)](https://www.dropified.com/blog/tiktok-shop-trend-velocity-mastery-the-complete-2026-guide-to-identifying-sourcing-profiting-from-48-hour-micro-trends/), [breakouts do Google Trends (xpert.digital)](https://xpert.digital/en/breakout-trends/).
 
 ## Limites (diga ao usuário)
 

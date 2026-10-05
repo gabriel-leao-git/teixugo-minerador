@@ -1,0 +1,20 @@
+{
+  "name": "teixugo",
+  "owner": {
+    "name": "Gabriel Leão",
+    "url": "https://github.com/gabriel-leao-git"
+  },
+  "metadata": {
+    "description": "Skills de pesquisa de produtos para dropshipping do Teixugo Minerador."
+  },
+  "plugins": [
+    {
+      "name": "teixugo-minerador",
+      "source": "./",
+      "description": "Minera produtos para dropshipping pesquisando de verdade na web (dor, nicho ou sonar), com agentes de pesquisa, verificação e revisão.",
+      "version": "0.4.0",
+      "license": "MIT",
+      "keywords": ["dropshipping", "product-research", "sonar", "agents"]
+    }
+  ]
+}

@@ -7,8 +7,15 @@ Pedido e busca:
   validate-brief  BRIEF.json   valida o pedido e mostra o que será usado (padrões aplicados)
   queries         BRIEF.json   matriz de buscas (plataforma x idioma x país), com texto pronto para busca web
 
+Vários agentes e triagem:
+  plan            BRIEF.json   divide a descoberta em lotes (um por agente) com as regras de segurança
+  probe           CANDS.json   sondas: ordena candidatos por uma olhada barata antes da verificação a fundo
+  merge           BASE PARTES  junta os relatórios parciais que cada agente trouxe (vence a evidência mais forte)
+  scan            ARQUIVO      procura tentativa de injeção de prompt em texto vindo da web ou de agentes
+
 Coleta de dados reais:
-  fetch           URL          lê UMA página (título, avaliação, preço); respeita o robots.txt
+  post-date       URL...       data aproximada de um post do TikTok, deduzida do ID (estimativa, sem abrir a página)
+  fetch           URL          lê UMA página (título, avaliação, preço); respeita o robots.txt e a rede interna
   youtube         CONSULTA     vídeos e estatísticas pela API oficial (variável YOUTUBE_API_KEY)
   trends-import   ARQUIVO.csv  índice de busca a partir do CSV exportado do Google Trends
 
@@ -37,7 +44,8 @@ from typing import Any
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from tx import (  # noqa: E402
-    __version__, blocks, economics, history, links, model, office, queries, render, score, trends, watch, webfetch, youtube,
+    __version__, agents, blocks, economics, history, links, model, office, posts, probe, queries, render, safety, score,
+    trends, watch, webfetch, youtube,
 )
 
 EXIT_ALERT = watch.EXIT_ALERT
@@ -231,6 +239,82 @@ def cmd_render(a: argparse.Namespace) -> int:
     return status
 
 
+def cmd_plan(a: argparse.Namespace) -> int:
+    errors, warnings, brief = model.validate_brief(_load(a.brief))
+    _report_issues(errors, warnings)
+    if errors:
+        return 2
+    print(_dump(agents.plan(brief, a.agents)))
+    return 0
+
+
+def cmd_probe(a: argparse.Namespace) -> int:
+    data = _load(a.candidates)
+    errors = probe.validate_candidates(data)
+    _report_issues(errors, [])
+    if errors:
+        return 2
+    th = {"verify": a.verify_at, "watch": a.watch_at}
+    ranked = probe.rank(data, th)
+    if a.format == "json":
+        print(_dump(ranked))
+    else:
+        print("| # | Candidato | Nota | Veredito | Confiança | Sem dado |\n|---|---|---|---|---|---|")
+        for i, r in enumerate(ranked, 1):
+            print(f"| {i} | {r['name']} | {r['score']} | {r['verdict']} | {r['confidence']} | {', '.join(r['missing']) or '—'} |")
+        keep = sum(r["verdict"] == "verify" for r in ranked)
+        print(f"\n{keep} de {len(ranked)} candidato(s) merecem verificação a fundo (nota >= {a.verify_at}). "
+              "As contagens são de resultados encontrados, não métricas de plataforma.")
+    return 0
+
+
+def cmd_merge(a: argparse.Namespace) -> int:
+    base = _load(a.base)
+    parts = [_load(p) for p in a.parts]
+    for i, part in enumerate(parts):
+        if not isinstance(part, dict) or not isinstance(part.get("products", []), list):
+            print(f"erro: {a.parts[i]} não tem o formato de relatório (precisa de 'products')")
+            return 2
+    merged = agents.merge(base, parts)
+    errors, warnings = model.validate_report(merged)
+    _report_issues(errors, warnings)
+    out = a.out or a.base
+    with open(out, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(_dump(merged) + "\n")
+    print(f"{len(merged['products'])} produto(s) em {out}" + (f" · {len(errors)} erro(s) para corrigir antes do render" if errors else ""))
+    return 2 if errors else 0
+
+
+def cmd_scan(a: argparse.Namespace) -> int:
+    try:
+        with open(a.file, encoding="utf-8-sig") as fh:
+            raw = fh.read()
+    except OSError as exc:
+        print(f"erro: {exc}")
+        return 2
+    try:
+        pairs = list(safety.walk_strings(json.loads(raw)))
+    except ValueError:
+        pairs = [("(texto)", raw)]
+    found = 0
+    for path, text in pairs:
+        for why in safety.scan_text(text):
+            print(f"[injeção?] {path}: {why}")
+            found += 1
+        if model.URL_RE.match(text.strip()):
+            for why in safety.scan_url(text.strip()):
+                print(f"[url] {path}: {why}")
+                found += 1
+    print(f"{found} achado(s)." if found else "nada suspeito encontrado (isto não prova que o texto é seguro).")
+    return 1 if found else 0
+
+
+def cmd_post_date(a: argparse.Namespace) -> int:
+    out = [posts.post_date(u) for u in a.urls]
+    print(_dump(out))
+    return 0 if any(o["posted_at"] for o in out) else 1
+
+
 def cmd_fetch(a: argparse.Namespace) -> int:
     res = webfetch.fetch(a.url, a.timeout)
     print(_dump(res))
@@ -266,7 +350,7 @@ def cmd_watch_add(a: argparse.Namespace) -> int:
     if errors:
         return 2
     th = {
-        "min_growth": a.min_growth, "min_score": a.min_score, "min_days": a.min_days,
+        "min_growth": a.min_growth, "min_score": a.min_score, "min_days": a.min_days, "sustain_days": a.sustain_days,
         "alert_on_new": not a.no_alert_on_new, "alert_on_moderate": a.alert_on_moderate,
     }
     channels = [c.strip() for c in a.channels.split(",") if c.strip()]
@@ -377,7 +461,33 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--strict", action="store_true", help="sai com código 1 se houver link quebrado")
     s.set_defaults(fn=cmd_check_links)
 
-    s = sub.add_parser("fetch", help="lê uma página (respeita o robots.txt)")
+    s = sub.add_parser("plan", help="divide a descoberta em lotes para vários agentes")
+    s.add_argument("brief")
+    s.add_argument("--agents", type=int, default=4, help="máximo de agentes em paralelo (padrão 4)")
+    s.set_defaults(fn=cmd_plan)
+
+    s = sub.add_parser("probe", help="sondas: triagem barata de candidatos")
+    s.add_argument("candidates")
+    s.add_argument("--format", choices=("md", "json"), default="md")
+    s.add_argument("--verify-at", type=float, default=probe.VERIFY_AT, help="nota mínima para verificar a fundo")
+    s.add_argument("--watch-at", type=float, default=probe.WATCH_AT, help="nota mínima para observar")
+    s.set_defaults(fn=cmd_probe)
+
+    s = sub.add_parser("merge", help="junta relatórios parciais de vários agentes")
+    s.add_argument("base")
+    s.add_argument("parts", nargs="+")
+    s.add_argument("--out", default=None, help="arquivo de saída (padrão: sobrescreve o base)")
+    s.set_defaults(fn=cmd_merge)
+
+    s = sub.add_parser("scan", help="procura injeção de prompt em texto")
+    s.add_argument("file")
+    s.set_defaults(fn=cmd_scan)
+
+    s = sub.add_parser("post-date", help="data aproximada de um post deduzida da URL (TikTok)")
+    s.add_argument("urls", nargs="+")
+    s.set_defaults(fn=cmd_post_date)
+
+    s = sub.add_parser("fetch", help="lê uma página (respeita o robots.txt e a rede interna)")
     s.add_argument("url")
     s.add_argument("--timeout", type=float, default=15.0)
     s.set_defaults(fn=cmd_fetch)
@@ -404,6 +514,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--min-growth", type=float, default=history.DEFAULT_THRESHOLDS["min_growth"], help="%% semanais para um componente contar como acelerando")
     s.add_argument("--min-score", type=float, default=history.DEFAULT_THRESHOLDS["min_score"], help="aceleração mínima (0-100) para alerta forte")
     s.add_argument("--min-days", type=int, default=history.DEFAULT_THRESHOLDS["min_days"], help="intervalo mínimo entre leituras, em dias")
+    s.add_argument("--sustain-days", type=int, default=history.DEFAULT_THRESHOLDS["sustain_days"], help="dias de aceleração contínua para marcar 'sustentada'")
     s.add_argument("--no-alert-on-new", action="store_true", help="não alertar só porque surgiu produto novo")
     s.add_argument("--alert-on-moderate", action="store_true", help="alertar também no nível moderado (mais sensível, mais ruído)")
     s.add_argument("--channels", default="email", help="email,calendar,push")

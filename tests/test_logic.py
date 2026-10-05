@@ -1,5 +1,6 @@
 import unittest
 import urllib.error
+from unittest import mock
 
 from _helpers import example_brief, example_report
 from tx import economics, links, queries, score
@@ -106,6 +107,11 @@ class Queries(unittest.TestCase):
 
 
 class Links(unittest.TestCase):
+    def setUp(self):
+        patcher = mock.patch("tx.netguard.socket.getaddrinfo", side_effect=lambda h, p, type=None, **k: [(2, 1, 6, "", ("93.184.216.34", p))])
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_collect_urls_from_values_and_sources(self):
         urls = links.collect_urls(example_report())
         self.assertIn("https://example.com/demo/tiktok/luva", urls)

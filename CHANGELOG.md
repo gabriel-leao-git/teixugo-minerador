@@ -2,6 +2,24 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versionamento semântico.
 
+## [0.4.0] - 2026-10-05
+
+### Adicionado
+- **Agentes** (`agents/`): `teixugo-scout` (descoberta em paralelo), `teixugo-verifier` (verificação por candidato) e `teixugo-redteam` (revisão adversária). Os que leem a web só têm busca e leitura de página (privilégio mínimo, imposto por teste); só o agente principal escreve arquivos e roda scripts. Comandos `plan` (divide a descoberta em lotes) e `merge` (junta os resultados; vence a evidência mais forte e conflitos viram aviso). Guia em `references/agentes.md`.
+- **Plugin do Claude Code** (`.claude-plugin/plugin.json` e `marketplace.json`, validados com `claude plugin validate --strict`): `/plugin marketplace add gabriel-leao-git/teixugo-minerador`.
+- **Instalador** passa a instalar os agentes (`~/.claude/agents` ou `.claude/agents`), sem sobrescrever agente seu com o mesmo nome; novas opções `--agents-dest` e `--no-agents`; a desinstalação remove só o que ele colocou.
+- **Segurança**: `references/seguranca.md` e `SECURITY.md`; `netguard` (recusa rede interna, esquemas estranhos e redirecionamento para IP privado; redirecionamentos conferidos salto a salto, com `robots.txt` de cada host); `safety` e comando `scan` (detecção de injeção de prompt e de segredo em URL), usados também no `validate` e no `fetch`.
+- **Sondas** (`probe`): triagem barata de candidatos antes da verificação a fundo, com nota, veredito e confiança.
+- **Parâmetros de busca**: `radius` (0 a 3: termo semente, relacionados, adjacentes, mercados análogos), `period_days` (`after:`), `exclude` (`-termo`), `intents` (discovery, proof, objection, commerce), `exact` (aspas). Cada consulta traz `intent` e `radius`. Guia em `references/sondas-e-raio.md`.
+- **Sonar**: persistência (aceleração por 14 dias ou mais = "sustentada", `--sustain-days`), faixas de saturação por número de anunciantes e o sinal `creators` como indicador antecipado.
+- **Avaliações** (`evals/`, formato do `claude plugin eval`): pedido vago, recusa de contornar `robots.txt`, injeção em página colada e modo sem web.
+- `post-date`: data aproximada de vídeos do TikTok deduzida do ID (estimativa), porque a busca na web testada **ignorou o operador `after:`** e devolveu vídeos de 2022 a 2024 para um filtro de 2026; o `validate` avisa `top_post` do TikTok com mais de 365 dias.
+- `ROADMAP.md`: o que a skill faz hoje e o que ainda pode melhorar.
+
+### Alterado
+- `SKILL.md`: princípio de que a web é dado e não instrução, checklist de progresso, seção de uso de agentes e fases de sondas e raio.
+- `fetch` segue redirecionamentos manualmente e devolve `warnings` quando a página parece uma injeção.
+
 ## [0.3.0] - 2026-10-05
 
 ### Adicionado

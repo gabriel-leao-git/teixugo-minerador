@@ -24,6 +24,10 @@ Rode as consultas nesta ordem, do amplo ao específico. `python scripts/teixugo.
 
 Os sufixos de prova e de objeção são a base para medir `effectiveness`. Reclamações recorrentes pesam mais que elogios isolados.
 
+### Raio, período e sondas
+
+Comece pelo raio 0 ou 1 e abra só se faltar candidato. Use `period_days` para ignorar resultado velho e `exclude` para cortar ruído (usado, revenda). Antes de verificar a fundo, **sonde** todos os candidatos e fique com os que passam. Parâmetros, contagens e limiares em `references/sondas-e-raio.md`.
+
 ## 3. Triangulação
 
 Um candidato só entra no ranking com **sinal em pelo menos 3 fontes independentes**:

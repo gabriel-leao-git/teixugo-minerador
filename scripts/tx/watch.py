@@ -38,7 +38,9 @@ T = {
         "score": "aceleração",
         "window": "janela",
         "wk": "/sem",
-        "comp": {"social": "engajamento", "search": "busca", "reviews": "avaliações", "ads": "anunciantes"},
+        "sustained": "sustentada há {n} dias",
+        "saturated": "saturação: anunciantes em faixa de saturação",
+        "comp": {"social": "engajamento", "search": "busca", "reviews": "avaliações", "ads": "anunciantes", "creators": "criadores"},
         "caveat": "Aceleração não é previsão: é crescimento medido entre duas leituras. Confira os links no relatório antes de agir.",
     },
     "en": {
@@ -53,7 +55,9 @@ T = {
         "score": "acceleration",
         "window": "window",
         "wk": "/wk",
-        "comp": {"social": "engagement", "search": "search", "reviews": "reviews", "ads": "advertisers"},
+        "sustained": "sustained for {n} days",
+        "saturated": "saturation: advertisers in the saturated band",
+        "comp": {"social": "engagement", "search": "search", "reviews": "reviews", "ads": "advertisers", "creators": "creators"},
         "caveat": "Acceleration is not a forecast: it is growth measured between two readings. Check the report links before acting.",
     },
 }
@@ -139,6 +143,10 @@ def build_digest(wid: str, entry: dict[str, Any], comparison: dict[str, Any], re
             for i in movers:
                 parts = [f"{s['comp'][c]} {g:+.0f}%{s['wk']}" for c, g in i["growth"].items() if g is not None]
                 extra = f" · {s['window']} {i['window']}" if i["window"] is not None else ""
+                if i.get("sustained"):
+                    extra += f" · {s['sustained'].format(n=i['sustained_days'])}"
+                if i.get("saturation") == "saturated":
+                    extra += f" · {s['saturated']}"
                 lines.append(f"- **{i['name']}** — {s['levels'][i['level']]} — {s['score']} {i['acceleration']}/100 · {' · '.join(parts)}{extra}")
             lines.append("")
         if comparison["new"]:
@@ -162,7 +170,8 @@ def update(store: str, wid: str, report: dict[str, Any], taken_at: str | None = 
     hist_path = os.path.join(paths["history"], f"{wid}.json")
     hist = history.load(hist_path)
     snap = history.make_snapshot(report)
-    comparison = history.compare(history.previous(hist, snap["taken_at"]), snap, entry["thresholds"])
+    earlier = history.before(hist, snap["taken_at"])
+    comparison = history.compare(earlier[-1] if earlier else None, snap, entry["thresholds"], earlier[:-1])
     history.save(hist_path, history.add_snapshot(hist, snap))
     history.apply_to_report(report, comparison)
     digest = build_digest(wid, entry, comparison, report)

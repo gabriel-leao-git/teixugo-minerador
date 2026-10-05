@@ -45,7 +45,8 @@ Números usados por `rank` para ordenar por tração. Todos relativos aos produt
 | `social_platforms` | Nº de plataformas com ≥ 3 posts ou anúncios relevantes nos últimos 90 dias | Registre o limiar usado em `limits` |
 | `ad_days` | Dias do anúncio ativo mais antigo | Anúncio rodando por meses sugere que paga o tráfego |
 | `rating` / `reviews` | Nota (0–5) e nº de avaliações do anúncio principal | Mesmo marketplace para todos, quando possível |
-| `advertisers` | Nº de anunciantes distintos com anúncio ativo para o produto | Usado pelo sonar (aceleração e janela); só se você conseguir contar |
+| `advertisers` | Nº de anunciantes distintos com anúncio ativo para o produto | Usado pelo sonar (aceleração, janela e saturação); só se você conseguir contar |
+| `creators` | Nº de criadores distintos publicando sobre o produto no período | Usado pelo sonar como indicador antecipado; só se você conseguir contar |
 
 Para o **sonar**, cada produto precisa de um **`id` estável** (kebab-case, igual em todas as leituras), senão mudar o nome faz o produto parecer novo.
 

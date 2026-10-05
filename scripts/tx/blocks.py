@@ -79,7 +79,10 @@ STR: dict[str, dict[str, Any]] = {
             "api": "API oficial", "user_provided": "dado do usuário", "estimate": "estimativa",
         },
         "sonar": "Sonar: aceleração desde a leitura anterior",
-        "sonar_cols": ["Produto", "Nível", "Aceleração (0–100)", "Engajamento", "Busca", "Avaliações", "Anunciantes", "Janela (0–100)"],
+        "sonar_cols": ["Produto", "Nível", "Aceleração (0–100)", "Engajamento", "Busca", "Avaliações", "Anunciantes", "Criadores", "Persistência", "Saturação", "Janela (0–100)"],
+        "sat": {"initial": "inicial (0–2 anunciantes)", "healthy": "saudável (3–10)", "warm": "aquecida (11–49)", "saturated": "saturada (50+)"},
+        "persist_yes": "sustentada ({n} dias)",
+        "persist_n": "{n} leitura(s)",
         "levels": {"strong": "forte", "moderate": "moderada", "none": "sem aceleração", "baseline": "linha de base"},
         "sonar_baseline": "Primeira leitura: linha de base registrada. A aceleração aparece a partir da próxima leitura (intervalo recomendado: 3 a 7 dias).",
         "sonar_compared": "Crescimento semanal equivalente, comparando {prev} com {cur} ({days} dias). Bases pequenas são ignoradas.",
@@ -152,7 +155,10 @@ STR: dict[str, dict[str, Any]] = {
             "api": "official API", "user_provided": "user-provided", "estimate": "estimate",
         },
         "sonar": "Sonar: acceleration since the previous reading",
-        "sonar_cols": ["Product", "Level", "Acceleration (0–100)", "Engagement", "Search", "Reviews", "Advertisers", "Window (0–100)"],
+        "sonar_cols": ["Product", "Level", "Acceleration (0–100)", "Engagement", "Search", "Reviews", "Advertisers", "Creators", "Persistence", "Saturation", "Window (0–100)"],
+        "sat": {"initial": "early (0–2 advertisers)", "healthy": "healthy (3–10)", "warm": "warm (11–49)", "saturated": "saturated (50+)"},
+        "persist_yes": "sustained ({n} days)",
+        "persist_n": "{n} reading(s)",
         "levels": {"strong": "strong", "moderate": "moderate", "none": "no acceleration", "baseline": "baseline"},
         "sonar_baseline": "First reading: baseline recorded. Acceleration shows up from the next reading (recommended gap: 3 to 7 days).",
         "sonar_compared": "Weekly-equivalent growth, comparing {prev} with {cur} ({days} days). Small bases are ignored.",
@@ -258,12 +264,20 @@ def _sonar_blocks(report: dict[str, Any], S: dict[str, Any]) -> list[dict[str, A
         if not s:
             continue
         g = s.get("growth") or {}
+        if s.get("sustained"):
+            persist = S["persist_yes"].format(n=s.get("sustained_days", 0))
+        elif s.get("streak"):
+            persist = S["persist_n"].format(n=s["streak"])
+        else:
+            persist = "—"
         rows.append(
             [
                 p["name"],
                 S["levels"].get(s["level"], s["level"]),
                 "—" if s.get("acceleration") is None else str(s["acceleration"]),
-                cell(g, "social"), cell(g, "search"), cell(g, "reviews"), cell(g, "ads"),
+                cell(g, "social"), cell(g, "search"), cell(g, "reviews"), cell(g, "ads"), cell(g, "creators"),
+                persist,
+                S["sat"].get(s.get("saturation"), "—"),
                 "—" if s.get("window") is None else str(s["window"]),
             ]
         )
