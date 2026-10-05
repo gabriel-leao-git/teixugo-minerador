@@ -1,16 +1,28 @@
 #!/usr/bin/env python3
 """Teixugo Minerador - linha de comando.
 
-Comandos:
+Pedido e busca:
   doctor                       confere Python e bibliotecas opcionais
   brief-template               imprime um brief (pedido estruturado) de exemplo
   validate-brief  BRIEF.json   valida o pedido e mostra o que será usado (padrões aplicados)
-  queries         BRIEF.json   gera a matriz de buscas (plataforma x idioma x país)
-  validate        REPORT.json  valida o relatório (etiquetas, fontes, datas, links)
+  queries         BRIEF.json   matriz de buscas (plataforma x idioma x país), com texto pronto para busca web
+
+Coleta de dados reais:
+  fetch           URL          lê UMA página (título, avaliação, preço); respeita o robots.txt
+  youtube         CONSULTA     vídeos e estatísticas pela API oficial (variável YOUTUBE_API_KEY)
+  trends-import   ARQUIVO.csv  índice de busca a partir do CSV exportado do Google Trends
+
+Relatório:
+  validate        REPORT.json  valida o relatório (etiquetas, fontes, datas, métodos)
   rank            REPORT.json  ordena os produtos por tração (--write grava no arquivo)
   economics                    calcula lucro, CPA e ROAS de equilíbrio
   check-links     REPORT.json  verifica se os links do relatório existem
   render          REPORT.json  gera md/txt/html/docx/xlsx/pdf a partir do mesmo JSON
+
+Sonar (histórico e alertas):
+  watch add       ID BRIEF     cria uma vigilância
+  watch update    ID REPORT    registra a leitura, mede aceleração e escreve o resumo (saída 10 = alerta)
+  watch list | routine ID      lista as vigilâncias | gera o texto de uma rotina agendada
 
 Somente biblioteca padrão, exceto docx/xlsx/pdf (opcionais, veja requirements-optional.txt).
 """
@@ -24,9 +36,14 @@ from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from tx import __version__, blocks, economics, links, model, office, queries, render, score  # noqa: E402
+from tx import (  # noqa: E402
+    __version__, blocks, economics, history, links, model, office, queries, render, score, trends, watch, webfetch, youtube,
+)
+
+EXIT_ALERT = watch.EXIT_ALERT
 
 BRIEF_TEMPLATE: dict[str, Any] = {
+    "kind": "pain",
     "language": "pt-BR",
     "pain": "remover pelo de cachorro",
     "quantity": 3,
@@ -101,7 +118,12 @@ def cmd_queries(a: argparse.Namespace) -> int:
     if errors:
         return 2
     rows = queries.build(brief, per_term=a.per_term, limit=a.limit)
-    print(_dump(rows) if a.format == "json" else queries.to_markdown(rows))
+    if a.format == "json":
+        print(_dump(rows))
+    elif a.format == "searches":
+        print("\n".join(queries.to_searches(rows)))
+    else:
+        print(queries.to_markdown(rows))
     return 0
 
 
@@ -183,7 +205,7 @@ def cmd_render(a: argparse.Namespace) -> int:
 
     meta = report["meta"]
     os.makedirs(a.out, exist_ok=True)
-    stem = f"{model.slugify(meta['pain'])}-{meta['generated_at']}"
+    stem = f"{model.slugify(model.scope_of(meta))}-{meta['generated_at']}"
     bl = blocks.build_blocks(report)
     status = 0
     for fmt in fmts:
@@ -209,6 +231,100 @@ def cmd_render(a: argparse.Namespace) -> int:
     return status
 
 
+def cmd_fetch(a: argparse.Namespace) -> int:
+    res = webfetch.fetch(a.url, a.timeout)
+    print(_dump(res))
+    return 1 if res["error"] else 0
+
+
+def cmd_youtube(a: argparse.Namespace) -> int:
+    try:
+        videos = youtube.search_videos(
+            a.query, os.environ.get("YOUTUBE_API_KEY", ""), region=a.region, language=a.lang,
+            days=a.days or None, max_results=a.max,
+        )
+    except youtube.YouTubeError as exc:
+        print(f"erro: {exc}")
+        return 2
+    print(_dump({"videos": videos, "evidence": youtube.as_evidence(videos)}))
+    return 0
+
+
+def cmd_trends_import(a: argparse.Namespace) -> int:
+    try:
+        with open(a.file, encoding="utf-8-sig") as fh:
+            print(_dump(trends.parse(fh.read())))
+    except (OSError, ValueError) as exc:
+        print(f"erro: {exc}")
+        return 2
+    return 0
+
+
+def cmd_watch_add(a: argparse.Namespace) -> int:
+    errors, warnings, brief = model.validate_brief(_load(a.brief))
+    _report_issues(errors, warnings)
+    if errors:
+        return 2
+    th = {
+        "min_growth": a.min_growth, "min_score": a.min_score, "min_days": a.min_days,
+        "alert_on_new": not a.no_alert_on_new, "alert_on_moderate": a.alert_on_moderate,
+    }
+    channels = [c.strip() for c in a.channels.split(",") if c.strip()]
+    try:
+        entry = watch.add(a.store, a.id, brief, th, channels, a.schedule)
+    except ValueError as exc:
+        print(f"erro: {exc}")
+        return 2
+    print(f"vigilância '{a.id}' criada em {a.store}/watchlist.json")
+    print(_dump({k: entry[k] for k in ("thresholds", "channels", "schedule")}))
+    print(f"\nPróximos passos: rode a skill no tipo 'sonar', salve o relatório e execute:\n  python scripts/teixugo.py watch update {a.id} REPORT.json --store {a.store}")
+    return 0
+
+
+def cmd_watch_list(a: argparse.Namespace) -> int:
+    watches = watch.list_watches(a.store)
+    if not watches:
+        print("nenhuma vigilância criada ainda.")
+        return 0
+    for wid, e in watches.items():
+        print(f"{wid}: {model.scope_of(e['brief'])} · canais: {', '.join(e['channels'])} · {e['schedule']}")
+    return 0
+
+
+def cmd_watch_update(a: argparse.Namespace) -> int:
+    report = _load(a.report)
+    errors, warnings = model.validate_report(report)
+    _report_issues(errors, warnings)
+    if errors:
+        print("\nrelatório inválido: nada foi registrado.")
+        return 2
+    try:
+        res = watch.update(a.store, a.id, report, a.date)
+    except (KeyError, ValueError) as exc:
+        print(f"erro: {exc.args[0] if exc.args else exc}")
+        return 2
+    if not a.no_write_report:
+        with open(a.report, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(_dump(report) + "\n")
+    print(res["digest"])
+    print(f"resumo gravado em {res['digest_path']}")
+    if res["alert"]:
+        print(f"ALERTA: há movimento acima dos limites (código de saída {EXIT_ALERT}).")
+        return EXIT_ALERT
+    print("sem alerta.")
+    return 0
+
+
+def cmd_watch_routine(a: argparse.Namespace) -> int:
+    try:
+        entry = watch.get(a.store, a.id)
+    except KeyError as exc:
+        print(f"erro: {exc.args[0]}")
+        return 2
+    print(watch.routine_prompt(a.id, entry, a.store))
+    return 0
+
+
 def _write(path: str, text: str) -> None:
     with open(path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(text)
@@ -228,7 +344,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("queries", help="gera a matriz de buscas")
     s.add_argument("brief")
-    s.add_argument("--format", choices=("md", "json"), default="md")
+    s.add_argument("--format", choices=("md", "json", "searches"), default="md",
+                   help="searches = só os textos prontos para a busca web, um por linha")
     s.add_argument("--per-term", type=int, default=7, help="variações por termo (padrão 7)")
     s.add_argument("--limit", type=int, default=120, help="máximo de consultas (padrão 120)")
     s.set_defaults(fn=cmd_queries)
@@ -259,6 +376,56 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--timeout", type=float, default=10.0)
     s.add_argument("--strict", action="store_true", help="sai com código 1 se houver link quebrado")
     s.set_defaults(fn=cmd_check_links)
+
+    s = sub.add_parser("fetch", help="lê uma página (respeita o robots.txt)")
+    s.add_argument("url")
+    s.add_argument("--timeout", type=float, default=15.0)
+    s.set_defaults(fn=cmd_fetch)
+
+    s = sub.add_parser("youtube", help="vídeos e estatísticas pela API oficial (YOUTUBE_API_KEY)")
+    s.add_argument("query")
+    s.add_argument("--region", default="BR", help="código do país (padrão BR)")
+    s.add_argument("--lang", default=None, help="idioma de relevância, ex.: pt")
+    s.add_argument("--days", type=int, default=90, help="só vídeos dos últimos N dias (0 = sem filtro)")
+    s.add_argument("--max", type=int, default=10)
+    s.set_defaults(fn=cmd_youtube)
+
+    s = sub.add_parser("trends-import", help="índice de busca a partir do CSV do Google Trends")
+    s.add_argument("file")
+    s.set_defaults(fn=cmd_trends_import)
+
+    w = sub.add_parser("watch", help="vigilâncias do sonar (histórico e alertas)")
+    wsub = w.add_subparsers(dest="wcmd", required=True)
+
+    s = wsub.add_parser("add", help="cria uma vigilância")
+    s.add_argument("id")
+    s.add_argument("brief")
+    s.add_argument("--store", default="teixugo-watch")
+    s.add_argument("--min-growth", type=float, default=history.DEFAULT_THRESHOLDS["min_growth"], help="%% semanais para um componente contar como acelerando")
+    s.add_argument("--min-score", type=float, default=history.DEFAULT_THRESHOLDS["min_score"], help="aceleração mínima (0-100) para alerta forte")
+    s.add_argument("--min-days", type=int, default=history.DEFAULT_THRESHOLDS["min_days"], help="intervalo mínimo entre leituras, em dias")
+    s.add_argument("--no-alert-on-new", action="store_true", help="não alertar só porque surgiu produto novo")
+    s.add_argument("--alert-on-moderate", action="store_true", help="alertar também no nível moderado (mais sensível, mais ruído)")
+    s.add_argument("--channels", default="email", help="email,calendar,push")
+    s.add_argument("--schedule", default=None, help="texto livre, ex.: 'toda segunda, 8h'")
+    s.set_defaults(fn=cmd_watch_add)
+
+    s = wsub.add_parser("list", help="lista as vigilâncias")
+    s.add_argument("--store", default="teixugo-watch")
+    s.set_defaults(fn=cmd_watch_list)
+
+    s = wsub.add_parser("update", help="registra a leitura e mede a aceleração (saída 10 = alerta)")
+    s.add_argument("id")
+    s.add_argument("report")
+    s.add_argument("--store", default="teixugo-watch")
+    s.add_argument("--date", default=None, help="AAAA-MM-DD (padrão: meta.generated_at do relatório)")
+    s.add_argument("--no-write-report", action="store_true", help="não grava sonar/radar de volta no relatório")
+    s.set_defaults(fn=cmd_watch_update)
+
+    s = wsub.add_parser("routine", help="texto pronto para criar a rotina agendada")
+    s.add_argument("id")
+    s.add_argument("--store", default="teixugo-watch")
+    s.set_defaults(fn=cmd_watch_routine)
 
     s = sub.add_parser("render", help="gera os arquivos do relatório")
     s.add_argument("report")

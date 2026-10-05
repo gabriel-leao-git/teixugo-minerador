@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 from . import economics
-from .model import FIELD_KEYS, URL_RE, fmt_value
+from .model import FIELD_KEYS, URL_RE, fmt_value, scope_of
 
 STR: dict[str, dict[str, Any]] = {
     "pt-BR": {
@@ -73,6 +73,19 @@ STR: dict[str, dict[str, Any]] = {
         },
         "src_cols": ["Fonte", "Data", "Etiqueta", "Usada em"],
         "verdict": "Veredito",
+        "via": "via",
+        "methods": {
+            "web_search": "busca web", "web_fetch": "leitura de página", "browser": "navegador",
+            "api": "API oficial", "user_provided": "dado do usuário", "estimate": "estimativa",
+        },
+        "sonar": "Sonar: aceleração desde a leitura anterior",
+        "sonar_cols": ["Produto", "Nível", "Aceleração (0–100)", "Engajamento", "Busca", "Avaliações", "Anunciantes", "Janela (0–100)"],
+        "levels": {"strong": "forte", "moderate": "moderada", "none": "sem aceleração", "baseline": "linha de base"},
+        "sonar_baseline": "Primeira leitura: linha de base registrada. A aceleração aparece a partir da próxima leitura (intervalo recomendado: 3 a 7 dias).",
+        "sonar_compared": "Crescimento semanal equivalente, comparando {prev} com {cur} ({days} dias). Bases pequenas são ignoradas.",
+        "sonar_new": "Novos no radar",
+        "sonar_gone": "Não apareceram nesta leitura",
+        "sonar_note": "Aceleração não é previsão: é crescimento medido entre duas leituras. A janela compara atenção com número de anunciantes nesta leitura (é relativa).",
     },
     "en": {
         "title": "Teixugo Minerador Report — {pain}",
@@ -133,6 +146,19 @@ STR: dict[str, dict[str, Any]] = {
         },
         "src_cols": ["Source", "Date", "Label", "Used in"],
         "verdict": "Verdict",
+        "via": "via",
+        "methods": {
+            "web_search": "web search", "web_fetch": "page read", "browser": "browser",
+            "api": "official API", "user_provided": "user-provided", "estimate": "estimate",
+        },
+        "sonar": "Sonar: acceleration since the previous reading",
+        "sonar_cols": ["Product", "Level", "Acceleration (0–100)", "Engagement", "Search", "Reviews", "Advertisers", "Window (0–100)"],
+        "levels": {"strong": "strong", "moderate": "moderate", "none": "no acceleration", "baseline": "baseline"},
+        "sonar_baseline": "First reading: baseline recorded. Acceleration shows up from the next reading (recommended gap: 3 to 7 days).",
+        "sonar_compared": "Weekly-equivalent growth, comparing {prev} with {cur} ({days} days). Small bases are ignored.",
+        "sonar_new": "New on the radar",
+        "sonar_gone": "Did not show up in this reading",
+        "sonar_note": "Acceleration is not a forecast: it is growth measured between two readings. The window compares attention with the number of advertisers in this reading (it is relative).",
     },
 }
 
@@ -144,8 +170,12 @@ def strings(lang: str) -> dict[str, Any]:
     return STR.get(lang, STR["pt-BR"])
 
 
-def src_text(f: dict[str, Any]) -> str:
-    return " · ".join(str(x) for x in (f.get("source"), f.get("date"), f.get("note")) if x)
+def src_text(f: dict[str, Any], S: dict[str, Any] | None = None) -> str:
+    parts = [str(x) for x in (f.get("source"), f.get("date"), f.get("note")) if x]
+    method = f.get("method")
+    if method:
+        parts.append(f"{S['via']} {S['methods'].get(method, method)}" if S else f"via {method}")
+    return " · ".join(parts)
 
 
 def evidence_rows(report: dict[str, Any]) -> list[dict[str, str]]:
@@ -165,6 +195,7 @@ def evidence_rows(report: dict[str, Any]) -> list[dict[str, str]]:
                     "source": str(f.get("source", "")),
                     "date": str(f.get("date", "")),
                     "note": str(f.get("note", "")),
+                    "method": S["methods"].get(f.get("method"), "") if f.get("method") else "",
                 }
             )
     return rows
@@ -202,14 +233,54 @@ def _field(label: str, f: dict[str, Any], S: dict[str, Any], key: str = "") -> d
         "url": text if URL_RE.match(text) else None,
         "tag": f["label"],
         "tagtext": S["tags"][f["label"]],
-        "src": src_text(f),
+        "src": src_text(f, S),
     }
+
+
+def _sonar_blocks(report: dict[str, Any], S: dict[str, Any]) -> list[dict[str, Any]]:
+    radar = report.get("radar")
+    products = report["products"]
+    if not radar and not any("sonar" in p for p in products):
+        return []
+    B: list[dict[str, Any]] = [{"t": "h2", "text": S["sonar"]}]
+    if radar and radar.get("baseline"):
+        B.append({"t": "p", "text": S["sonar_baseline"]})
+    elif radar:
+        B.append({"t": "p", "text": S["sonar_compared"].format(prev=radar["compared_to"], cur=radar["taken_at"], days=radar["days"])})
+
+    def cell(g: dict[str, Any], comp: str) -> str:
+        v = g.get(comp)
+        return f"{v:+.0f}%" if v is not None else "—"
+
+    rows = []
+    for p in products:
+        s = p.get("sonar")
+        if not s:
+            continue
+        g = s.get("growth") or {}
+        rows.append(
+            [
+                p["name"],
+                S["levels"].get(s["level"], s["level"]),
+                "—" if s.get("acceleration") is None else str(s["acceleration"]),
+                cell(g, "social"), cell(g, "search"), cell(g, "reviews"), cell(g, "ads"),
+                "—" if s.get("window") is None else str(s["window"]),
+            ]
+        )
+    if rows:
+        B.append({"t": "table", "headers": list(S["sonar_cols"]), "rows": rows})
+    if radar and radar.get("new"):
+        B += [{"t": "p", "text": S["sonar_new"] + ":"}, {"t": "bullets", "items": list(radar["new"])}]
+    if radar and radar.get("gone"):
+        B += [{"t": "p", "text": S["sonar_gone"] + ":"}, {"t": "bullets", "items": list(radar["gone"])}]
+    B.append({"t": "note", "text": S["sonar_note"]})
+    return B
 
 
 def build_blocks(report: dict[str, Any]) -> list[dict[str, Any]]:
     meta = report["meta"]
     S = strings(meta["language"])
-    B: list[dict[str, Any]] = [{"t": "title", "text": S["title"].format(pain=meta["pain"])}]
+    B: list[dict[str, Any]] = [{"t": "title", "text": S["title"].format(pain=scope_of(meta))}]
     if meta.get("demo"):
         B.append({"t": "banner", "text": S["demo"]})
     if meta.get("mode") == "hypothesis":
@@ -289,6 +360,8 @@ def build_blocks(report: dict[str, Any]) -> list[dict[str, Any]]:
     B.append({"t": "table", "headers": headers, "rows": rows})
     for p in products:
         B.append({"t": "p", "text": f"{p['name']}: {fmt_value(p['comparison']['value'])}"})
+
+    B += _sonar_blocks(report, S)
 
     # 5. Unit economics (só se algum produto trouxe `economics`)
     with_econ = [p for p in products if isinstance(p.get("economics"), dict)]

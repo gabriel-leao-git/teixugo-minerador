@@ -20,11 +20,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Instalar dependências opcionais (docx, xlsx, pdf)
         if: ${{ matrix.extras }}
         run: python -m pip install -r requirements-optional.txt
       - name: Testes
         run: python -m unittest discover -s tests -v
+      - name: Conteúdo do pacote npm
+        run: npm pack --dry-run
       - name: Diagnóstico
         run: python scripts/teixugo.py doctor
       - name: Exemplo valida e renderiza

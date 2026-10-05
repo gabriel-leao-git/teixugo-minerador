@@ -12,7 +12,9 @@ python scripts/teixugo.py check-links teixugo-relatorios/report.json
 python scripts/teixugo.py render   teixugo-relatorios/report.json --format pdf,xlsx --out teixugo-relatorios
 ```
 
-Saída: `teixugo-relatorios/<dor>-<AAAA-MM-DD>.<ext>`. Informe o caminho completo ao usuário. `render` recusa gerar se o relatório tiver erros de validação (nada é escrito pela metade).
+No sonar, rode `watch update ID REPORT.json` **antes** do `render`: ele grava `sonar` e `radar` no relatório, e a seção "Sonar" aparece em todos os formatos (`references/sonar-e-historico.md`).
+
+Saída: `teixugo-relatorios/<assunto>-<AAAA-MM-DD>.<ext>` (o assunto é a dor ou o nicho). Informe o caminho completo ao usuário. `render` recusa gerar se o relatório tiver erros de validação (nada é escrito pela metade).
 
 ## O que cada formato entrega
 

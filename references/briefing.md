@@ -4,7 +4,10 @@
 
 | Campo (`brief.json`) | O que é | Padrão se faltar |
 |---|---|---|
-| `pain` | A dor que os produtos devem resolver. **Obrigatório.** | Sem padrão: pergunte |
+| `kind` | Tipo de busca: `pain` (por dor), `niche` (por nicho) ou `sonar` (o que está acelerando) | `pain`; `niche` se só o nicho foi informado |
+| `pain` | A dor que os produtos devem resolver. **Obrigatório em `pain`** | Sem padrão: pergunte |
+| `niche` | O nicho (ex.: "pet", "organização de casa"). **Obrigatório em `niche`**; no `sonar`, `pain` ou `niche` | Sem padrão |
+| `platforms` | Limita onde pesquisar: `tiktok`, `youtube`, `instagram`, `pinterest`, `reddit`, `google`, `google_trends`, `meta_ad_library`, `mercado_livre`, `amazon`, `shopee`, `aliexpress` | Todas |
 | `quantity` | Quantos produtos entregar (1 a 10) | 3 |
 | `market` | Países onde vender (códigos: `["BR"]`) | `["BR"]` |
 | `language` | Idioma do relatório (`pt-BR` ou `en`) | O idioma do pedido |
@@ -47,19 +50,21 @@ A ferramenta aceita de 1 a 4 perguntas por chamada, 2 a 4 opções por pergunta,
 
 | header | question | options (recomendada primeiro) | multiSelect |
 |---|---|---|---|
+| Tipo | O que você quer fazer? | Produtos para uma dor (Recomendado) · Produtos de um nicho · Sonar: o que está acelerando | não |
 | Quantidade | Quantos produtos devo trazer? | 3 (Recomendado) · 5 · 1 · 10 | não |
 | Mercado | Em qual mercado você vai vender? | Brasil (Recomendado) · Estados Unidos · Portugal / Europa | não |
 | Formato | Em qual formato quer o relatório? | PDF · Excel (.xlsx) · Word (.docx) · Markdown / texto | **sim** |
-| Ranking | O que define "mais ranqueado"? | Redes sociais (Recomendado) · Buscas (Recomendado) · Avaliações e efetividade · Anúncios ativos | **sim** |
 
 **Rodada 2** (só se fizer diferença, 2 a 4 perguntas):
 
 | header | question | options | multiSelect |
 |---|---|---|---|
+| Ranking | O que define "mais ranqueado"? | Redes sociais (Recomendado) · Buscas (Recomendado) · Avaliações e efetividade · Anúncios ativos | **sim** |
+| Plataformas | Onde devo pesquisar? | Todas (Recomendado) · TikTok e YouTube · Marketplaces · Redes sociais | não |
 | Variedade | Os produtos devem ser de tipos diferentes? | Sim, tipos diferentes (Recomendado) · Podem ser variações do mesmo tipo | não |
 | Margem | Incluir custo, margem e ROAS de equilíbrio? | Não, só pesquisa (Recomendado) · Sim, com cenários de preço | não |
-| Preço | Qual a faixa de preço de venda? | Até US$ 30 · US$ 30–80 (Recomendado) · Acima de US$ 80 | não |
-| Logística | Como será o envio? | Dropshipping internacional (Recomendado) · Fornecedor nacional · Estoque próprio | não |
+
+Faixa de preço e logística (dropshipping internacional, fornecedor nacional ou estoque próprio) só entram se o usuário mencionar; senão, use os padrões. A dor ou o nicho continua sendo pergunta em texto livre.
 
 Se a ferramenta devolver "Outro" com texto, use o texto. Traduza as respostas para `brief.json`.
 
@@ -69,7 +74,7 @@ Envie **uma** mensagem curta e aceite "ok" para tudo:
 
 ```
 Para eu cavar no lugar certo, confirme (responda "ok" para aceitar os padrões):
-1. Dor ou nicho: ______  (obrigatório)
+1. Dor ou nicho: ______  (obrigatório). Quer o sonar (o que está acelerando)? (padrão: não)
 2. Quantos produtos? (padrão: 3)
 3. Mercado? (padrão: Brasil)
 4. Formato do relatório? PDF / Excel / Word / .txt / .md (padrão: .md)

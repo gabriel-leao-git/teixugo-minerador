@@ -73,7 +73,8 @@ class Queries(unittest.TestCase):
         platforms = {r["platform"] for r in rows}
         for p in ("google", "youtube", "tiktok", "google_trends", "meta_ad_library", "mercado_livre"):
             self.assertIn(p, platforms)
-        self.assertTrue(all(r["url"].startswith("https://") for r in rows))
+        self.assertTrue(all(r["url"].startswith("https://") for r in rows if r["url"]))
+        self.assertTrue(all(r["url"] or r["web_search"] for r in rows))  # toda linha é buscável de algum jeito
 
     def test_trends_and_ad_library_only_use_base_term(self):
         rows = queries.build(example_brief(), per_term=7, limit=1000)

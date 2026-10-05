@@ -2,6 +2,8 @@
 
 Use **pelo menos 3 fontes independentes** por rodada. Prefira fontes públicas e gratuitas; ferramentas pagas só se o usuário tiver acesso e fornecer os dados (exportação, print, link). Se uma fonte pedir login ou bloquear o acesso, registre "⚪ não acessível" — não tente burlar.
 
+**Atenção:** várias dessas fontes não podem ser lidas por agente automático (bloqueio HTTP, `robots.txt`, JavaScript). O que funciona hoje, fonte por fonte, e como provar cada dado está em `references/acesso-web.md`. Em geral: a **busca na web com `site:`** acha produtos e links de TikTok, YouTube, Instagram, Pinterest, Reddit e marketplaces; os **números** vêm de API oficial, navegador, CSV do Trends ou dado do usuário.
+
 ## Demanda e tendência
 
 | Fonte | Para quê |

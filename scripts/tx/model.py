@@ -16,6 +16,13 @@ MODES = ("live", "hypothesis")
 FORMATS = ("md", "txt", "html", "docx", "xlsx", "pdf")
 RANK_COMPONENTS = ("social", "search", "reviews", "ads")
 VARIETY = ("different", "same", "any")
+KINDS = ("pain", "niche", "sonar")  # tipo de busca do pedido
+# Como o dado foi obtido (campo opcional `method` em cada campo com evidência).
+METHODS = ("web_search", "web_fetch", "browser", "api", "user_provided", "estimate")
+PLATFORM_KEYS = (
+    "google", "youtube", "tiktok", "instagram", "pinterest", "reddit", "google_trends",
+    "meta_ad_library", "mercado_livre", "amazon", "shopee", "aliexpress",
+)
 
 TEXT_KEYS = ("name", "pain", "solution_type")
 # Campos com evidência, na ordem de exibição do formato de saída.
@@ -33,13 +40,14 @@ FIELD_KEYS = (
     "first_seen",
     "comparison",
 )
-SIGNAL_KEYS = ("engagement", "search_index", "social_platforms", "ad_days", "rating", "reviews")
+SIGNAL_KEYS = ("engagement", "search_index", "social_platforms", "ad_days", "rating", "reviews", "advertisers")
 ECON_KEYS = ("price", "cost", "shipping", "tax", "fee_pct", "fee_fixed", "refund_pct")
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 URL_RE = re.compile(r"^https?://\S+$")
 
 BRIEF_DEFAULTS: dict[str, Any] = {
+    "kind": "pain",
     "language": "pt-BR",
     "quantity": 3,
     "market": ["BR"],
@@ -64,6 +72,15 @@ def is_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+def scope_of(obj: dict[str, Any]) -> str:
+    """O assunto da busca: a dor ou, se não houver, o nicho."""
+    for key in ("pain", "niche"):
+        v = obj.get(key)
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+    return ""
+
+
 def slugify(text: str, limit: int = 40) -> str:
     text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
     text = re.sub(r"[^a-zA-Z0-9]+", "-", text).strip("-").lower()
@@ -86,10 +103,29 @@ def validate_brief(brief: Any) -> tuple[list[str], list[str], dict[str, Any]]:
     if not isinstance(brief, dict):
         return ["o brief deve ser um objeto JSON"], warnings, {}
 
-    out: dict[str, Any] = {**BRIEF_DEFAULTS, **{k: v for k, v in brief.items() if v is not None}}
+    given = {k: v for k, v in brief.items() if v is not None}
+    if "kind" not in given and not scope_of({"pain": given.get("pain")}) and scope_of({"niche": given.get("niche")}):
+        given["kind"] = "niche"  # só o nicho foi informado
+    out: dict[str, Any] = {**BRIEF_DEFAULTS, **given}
 
-    if not isinstance(out.get("pain"), str) or not out["pain"].strip():
-        errors.append("pain: obrigatório (a dor que os produtos devem resolver)")
+    for key in ("pain", "niche"):
+        if key in out and not isinstance(out[key], str):
+            errors.append(f"{key}: deve ser texto")
+    has_pain = bool(scope_of({"pain": out.get("pain")}))
+    has_niche = bool(scope_of({"niche": out.get("niche")}))
+    kind = out["kind"]
+    if kind not in KINDS:
+        errors.append(f"kind: use um de {KINDS}")
+    elif kind == "pain" and not has_pain:
+        errors.append("pain: obrigatório quando kind='pain' (a dor que os produtos devem resolver)")
+    elif kind == "niche" and not has_niche:
+        errors.append("niche: obrigatório quando kind='niche'")
+    elif kind == "sonar" and not (has_pain or has_niche):
+        errors.append("pain ou niche: informe ao menos um para o sonar saber onde procurar")
+    out["scope"] = scope_of(out)
+    plats = out.get("platforms")
+    if plats is not None and (not isinstance(plats, list) or any(p not in PLATFORM_KEYS for p in plats)):
+        errors.append(f"platforms: lista com itens de {PLATFORM_KEYS}")
     if out["language"] not in LANGS:
         errors.append(f"language: use um de {LANGS}")
     q = out["quantity"]
@@ -144,6 +180,11 @@ def _check_field(path: str, f: Any, mode: str, errors: list[str], warnings: list
         return
     if f.get("date") not in (None, "") and not is_date(f.get("date")):
         errors.append(f"{path}.date: use AAAA-MM-DD")
+    method = f.get("method")
+    if method is not None and method not in METHODS:
+        errors.append(f"{path}.method: use um de {METHODS}")
+    elif label == "verified" and method == "web_search":
+        warnings.append(f"{path}: 'verified' só por trecho de busca (method='web_search'); abra a página ou rebaixe para 'estimated'")
     if label == "verified":
         if not str(f.get("source", "")).strip():
             errors.append(f"{path}: dado 'verified' exige 'source' (onde foi visto)")
@@ -172,8 +213,10 @@ def validate_report(report: Any) -> tuple[list[str], list[str]]:
         errors.append(f"meta.mode: use um de {MODES}")
     if not is_date(meta.get("generated_at")):
         errors.append("meta.generated_at: use AAAA-MM-DD")
-    if not isinstance(meta.get("pain"), str) or not meta["pain"].strip():
-        errors.append("meta.pain: obrigatório")
+    if not scope_of(meta):
+        errors.append("meta.pain ou meta.niche: obrigatório")
+    if meta.get("kind") is not None and meta["kind"] not in KINDS:
+        errors.append(f"meta.kind: use um de {KINDS}")
     mode = meta.get("mode")
 
     products = report.get("products")
@@ -186,6 +229,7 @@ def validate_report(report: Any) -> tuple[list[str], list[str]]:
         warnings.append(f"meta.quantity={q}, mas o relatório tem {len(products)} produto(s)")
 
     names: set[str] = set()
+    ids: set[str] = set()
     types: set[str] = set()
     for i, p in enumerate(products):
         path = f"products[{i}]"
@@ -195,6 +239,13 @@ def validate_report(report: Any) -> tuple[list[str], list[str]]:
         for key in TEXT_KEYS:
             if not isinstance(p.get(key), str) or not p[key].strip():
                 errors.append(f"{path}.{key}: obrigatório")
+        pid = p.get("id")
+        if pid is not None:
+            if not isinstance(pid, str) or not re.match(r"^[a-z0-9][a-z0-9-]{0,62}$", pid):
+                errors.append(f"{path}.id: use kebab-case (letras minúsculas, números e hífens)")
+            elif pid in ids:
+                errors.append(f"{path}.id: id duplicado")
+            ids.add(str(pid))
         name = str(p.get("name", "")).strip().casefold()
         if name in names:
             errors.append(f"{path}.name: produto duplicado")
@@ -205,6 +256,15 @@ def validate_report(report: Any) -> tuple[list[str], list[str]]:
                 errors.append(f"{path}.{key}: campo obrigatório ausente")
             else:
                 _check_field(f"{path}.{key}", p[key], mode, errors, warnings, url_value=(key == "top_post"))
+        tp, eng = p.get("top_post"), p.get("engagement")
+        if (
+            isinstance(tp, dict) and isinstance(eng, dict)
+            and tp.get("label") == "verified" and eng.get("label") == "unverified"
+        ):
+            warnings.append(
+                f"{path}.top_post: o link é 'verified', mas o engajamento é 'unverified'; "
+                "sem comparar métricas, 'maior engajamento' não está provado (use 'estimated' e explique em 'note')"
+            )
         sig = p.get("signals")
         if sig is not None:
             if not isinstance(sig, dict):

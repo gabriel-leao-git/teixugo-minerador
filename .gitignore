@@ -1,5 +1,6 @@
-# relatórios gerados e pedidos locais
+# relatórios gerados, vigilâncias e pedidos locais
 teixugo-relatorios/
+teixugo-watch/
 
 # Python
 __pycache__/
@@ -7,6 +8,10 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+
+# Node / npm
+node_modules/
+*.tgz
 
 # editores e sistema
 .vscode/

@@ -2,6 +2,7 @@
 
 Cada campo do produto é `{ "value": …, "label": "verified|estimated|unverified", "source": …, "date": "AAAA-MM-DD", "note": … }`.
 
+- `method` (recomendado em todo campo): como o dado foi obtido: `web_search` (trecho de busca), `web_fetch` (página lida), `browser`, `api`, `user_provided` ou `estimate`. Dado `verified` só por `web_search` gera aviso: abra a página ou rebaixe para `estimated`. Veja `references/acesso-web.md`.
 - `verified` **exige** `source` (URL ou onde foi visto) e `date` (dia da consulta).
 - `estimated` deve explicar em `note` como foi estimado.
 - `unverified` diz no `value` o que não foi possível confirmar.
@@ -24,7 +25,7 @@ Cada campo do produto é `{ "value": …, "label": "verified|estimated|unverifie
 | `target_audience` | Quem compra: perfil, faixa etária, situação | Comentários dos vídeos, avaliações, públicos dos anúncios | Cite o que viu ("comentários pedem…"); sem estereótipo inventado |
 | `effectiveness` | O produto resolve a dor? | **Proxy**: nota média e nº de avaliações do anúncio principal; reclamações recorrentes; vídeos de antes e depois; teste de terceiros | Nunca prometa resultado. Avaliações com todas 5★ no mesmo dia ou de loja de dropshipping não valem como prova. Se só há prova em vídeo do vendedor, é `estimated` |
 | `engagement` | Engajamento do post/anúncio líder | Views, curtidas, comentários, compartilhamentos, **na plataforma, na data da consulta** | Informe a métrica ("1,2 mi de views · 96 mil curtidas · TikTok"). Não some plataformas diferentes |
-| `top_post` | **URL** do post ou anúncio de maior engajamento | Abra a página e confira que mostra o produto certo e a métrica citada | Meta Ad Library, em geral, não exibe engajamento de anúncios comerciais: use o post orgânico de maior engajamento, ou o anúncio com mais tempo no ar, e diga qual critério usou em `note` |
+| `top_post` | **URL** do post ou anúncio de maior engajamento | Link de resultado real de busca ou de página aberta; confira que mostra o produto certo | "Maior engajamento" só é `verified` se você comparou métricas. Se só achou o link (comum no TikTok, cujas métricas a leitura automática não alcança), use `estimated` e diga em `note` o critério e o que não leu. Meta Ad Library, em geral, não exibe engajamento de anúncio comercial: use o post orgânico de maior engajamento ou o anúncio com mais tempo no ar |
 | `social_networks` | Lista **em ordem** das redes com mais engajamento para o produto | Compare as redes na mesma janela (ex.: últimos 90 dias) | Lista de textos (`["TikTok","Instagram Reels"]`) |
 | `search_channel` | Canal com mais busca pelo produto/solução | Google Trends (Web, YouTube, Shopping, Imagens), busca interna de TikTok/marketplaces | É interesse **relativo** (índice 0–100), não volume absoluto. Diga o período e o país |
 | `supplier` | Fornecedor candidato | Nome, URL, preço unitário, prazo estimado, avaliações da loja | `verified` só com a página aberta. Sem confirmação de prazo e avaliações, `unverified` |
@@ -44,6 +45,9 @@ Números usados por `rank` para ordenar por tração. Todos relativos aos produt
 | `social_platforms` | Nº de plataformas com ≥ 3 posts ou anúncios relevantes nos últimos 90 dias | Registre o limiar usado em `limits` |
 | `ad_days` | Dias do anúncio ativo mais antigo | Anúncio rodando por meses sugere que paga o tráfego |
 | `rating` / `reviews` | Nota (0–5) e nº de avaliações do anúncio principal | Mesmo marketplace para todos, quando possível |
+| `advertisers` | Nº de anunciantes distintos com anúncio ativo para o produto | Usado pelo sonar (aceleração e janela); só se você conseguir contar |
+
+Para o **sonar**, cada produto precisa de um **`id` estável** (kebab-case, igual em todas as leituras), senão mudar o nome faz o produto parecer novo.
 
 `rank_by` escolhe os componentes: `social` (engajamento + plataformas), `search`, `reviews` (nota × confiança pelo volume), `ads` (dias). Se um componente falta em **qualquer** produto, ele sai do cálculo para **todos** e o relatório avisa. A nota é relativa: o melhor da rodada em cada componente recebe 100%.
 

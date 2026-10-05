@@ -12,7 +12,7 @@ Dor → situações → tipos de solução → nomes de produto → sinônimos. 
 
 ## 2. Escada de consultas
 
-Rode as consultas nesta ordem, do amplo ao específico (`python scripts/teixugo.py queries BRIEF.json` monta a matriz):
+Rode as consultas nesta ordem, do amplo ao específico. `python scripts/teixugo.py queries BRIEF.json --format searches` imprime os textos prontos para a **busca na web** (ex.: `site:tiktok.com remover pelo de cachorro review`); sem `--format`, a matriz traz também o link de busca nativo de cada plataforma. **Execute** as buscas e use as URLs reais que voltarem; o que a busca mostra é descoberta, não prova de métrica (`references/acesso-web.md`).
 
 | Degrau | Objetivo | Exemplo |
 |---|---|---|
@@ -67,7 +67,7 @@ Pare de cavar quando, para cada um dos N produtos escolhidos: (a) há sinal em 3
 
 ## 7. Fontes bloqueadas
 
-Login, pagamento, captcha ou bloqueio de robô: não contorne. Registre em `limits` ("Meta Ad Library não acessível nesta sessão") e use outra fonte para o mesmo sinal. Se o usuário tiver ferramentas pagas, peça exportação ou print e use como `estimated`.
+Login, pagamento, captcha, `robots.txt` que proíbe agentes de IA ou bloqueio de robô (HTTP 403, 429, 503): **não contorne**. Registre em `limits` ("Meta Ad Library não acessível nesta sessão") e use outra fonte para o mesmo sinal: busca na web com `site:`, API oficial (`youtube`), CSV do Trends, navegador do usuário ou o modo assistido. Se o usuário tiver ferramentas pagas, peça a exportação ou o print e use como `estimated`.
 
 ## 8. Registre enquanto pesquisa
 

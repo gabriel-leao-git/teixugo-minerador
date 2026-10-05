@@ -33,6 +33,10 @@ O **ranking** é por **tração** (o que o usuário pediu: mais ranqueados em re
 - A nota **não** mede qualidade nem lucratividade do produto: mede tração relativa. Um 100 no exemplo não significa "excelente", só "líder desta rodada".
 - Empate: mantém a ordem original.
 
+### Ranking do sonar
+
+No `kind: "sonar"` o ranking é por **aceleração** (crescimento semanal entre duas leituras, nota absoluta 0–100) e, no desempate, pela **janela** (muita atenção, poucos anunciantes). Fórmulas, limites e salvaguardas em `references/sonar-e-historico.md`. A nota de tração acima continua útil como visão de "quem já é grande"; a aceleração mostra "quem está subindo".
+
 ## 3. Unit economics (opcional, só se o usuário pediu margem)
 
 ```

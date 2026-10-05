@@ -1,0 +1,45 @@
+{
+  "name": "teixugo-minerador",
+  "version": "0.3.0",
+  "description": "Skill do Claude que minera produtos para dropshipping pesquisando de verdade na web. Instalador via npx.",
+  "license": "MIT",
+  "author": "Gabriel Leão",
+  "homepage": "https://github.com/gabriel-leao-git/teixugo-minerador#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gabriel-leao-git/teixugo-minerador.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gabriel-leao-git/teixugo-minerador/issues"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "agent-skill",
+    "skill",
+    "dropshipping",
+    "product-research"
+  ],
+  "bin": {
+    "teixugo-minerador": "bin/install.js"
+  },
+  "files": [
+    "bin/",
+    "SKILL.md",
+    "references/",
+    "scripts/",
+    "examples/",
+    "README.md",
+    "README.pt-BR.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "requirements-optional.txt"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "test": "python -m unittest discover -s tests",
+    "pack:check": "npm pack --dry-run"
+  }
+}

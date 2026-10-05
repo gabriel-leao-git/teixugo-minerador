@@ -10,7 +10,7 @@ from typing import Any
 
 from . import economics
 from .blocks import collect_sources, evidence_rows, strings
-from .model import FIELD_KEYS, fmt_value
+from .model import FIELD_KEYS, fmt_value, scope_of
 
 TAG_RGB = {"verified": (0x1A, 0x7F, 0x37), "estimated": (0x9A, 0x67, 0x00), "unverified": (0x6E, 0x77, 0x81)}
 
@@ -131,7 +131,7 @@ def to_xlsx(report: dict[str, Any], path: str) -> None:
     # Resumo
     ws = wb.active
     ws.title = S["summary"]
-    ws.append([S["title"].format(pain=meta["pain"])])
+    ws.append([S["title"].format(pain=scope_of(meta))])
     ws["A1"].font = Font(bold=True, size=14)
     if meta.get("demo"):
         ws.append([S["demo"]])
@@ -182,9 +182,10 @@ def to_xlsx(report: dict[str, Any], path: str) -> None:
     sheet(
         "Evidências" if meta["language"] == "pt-BR" else "Evidence",
         [S["fields"]["name"], "Campo" if meta["language"] == "pt-BR" else "Field", "Valor" if meta["language"] == "pt-BR" else "Value",
-         S["src_cols"][2], S["src_cols"][0], S["src_cols"][1], "Nota" if meta["language"] == "pt-BR" else "Note"],
-        [[r["product"], r["field"], r["value"], r["tag"], r["source"], r["date"], r["note"]] for r in ev],
-        [26, 32, 50, 16, 40, 12, 40],
+         S["src_cols"][2], S["src_cols"][0], S["src_cols"][1], "Nota" if meta["language"] == "pt-BR" else "Note",
+         "Método" if meta["language"] == "pt-BR" else "Method"],
+        [[r["product"], r["field"], r["value"], r["tag"], r["source"], r["date"], r["note"], r["method"]] for r in ev],
+        [26, 32, 50, 16, 40, 12, 40, 18],
     )
 
     # Unit economics com FÓRMULAS (o usuário pode editar preço/custo/taxas)
